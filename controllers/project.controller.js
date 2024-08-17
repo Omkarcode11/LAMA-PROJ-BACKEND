@@ -5,10 +5,10 @@ const catchAsync = require("../utils/catchAsync");
 
 // Create a Project
 exports.createProject = catchAsync(async (req, res) => {
-  const { title, description } = req.body;
+  const { title } = req.body;
 
   try {
-    const project = new Project({ title, description, user: req.user._id });
+    const project = new Project({ title, user: req.user._id });
     const savedProject = await project.save();
 
     req.user.projects.push(savedProject._id);
@@ -36,14 +36,13 @@ exports.getProjects = catchAsync(async (req, res) => {
 
 // Update a Project
 exports.updateProject = catchAsync(async (req, res) => {
-  const { title, description } = req.body;
+  const { title } = req.body;
   try {
     const project = await Project.findById(req.params.id);
     if (project.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: "Not authorized" });
     }
     project.title = title;
-    project.description = description;
     const updatedProject = await project.save();
     res.json(updatedProject);
   } catch (err) {
@@ -89,5 +88,29 @@ exports.addEpisode = catchAsync(async (req, res) => {
     res.status(201).json(savedEpisode);
   } catch (err) {
     res.status(400).json({ message: "Failed to add episode" });
+  }
+});
+
+exports.getAllProject = catchAsync(async (req, res) => {
+  let { username } = req.params;
+
+  let projects = await User.find({ username })
+    .populate("projects")
+    .select("projects");
+
+  return res.status(200).json(projects);
+});
+
+exports.getAllEpisodes = catchAsync(async (req, res) => {
+  try {
+    let { projectId } = req.params;
+    // Find all episodes where the `project` field matches the given `projectId`
+    // and populate the `project` field with the corresponding Project document
+    const episodes = await Episode.find({ project: projectId });
+
+    return res.status(200).json({ episodes });
+  } catch (error) {
+    console.error("Error fetching episodes:", error);
+    throw new Error("Could not retrieve episodes");
   }
 });

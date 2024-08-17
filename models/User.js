@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project' }] // Array of Projects
-});
+},{timestamps:true});
 
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {

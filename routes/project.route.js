@@ -5,9 +5,14 @@ const {
   updateProject,
   deleteProject,
   addEpisode,
+  getAllProject,
+  getAllEpisodes,
 } = require("../controllers/project.controller");
 const protect = require("../middleware/auth.middleware");
 const router = express.Router();
+
+router.get('/allProject/:username',getAllProject)
+router.get('/allEpisodes/:projectId',getAllEpisodes)
 
 router.route("/").get(protect, getProjects).post(protect, createProject);
 router.route("/:id").put(protect, updateProject).delete(protect, deleteProject);
