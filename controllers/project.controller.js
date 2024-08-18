@@ -114,3 +114,57 @@ exports.getAllEpisodes = catchAsync(async (req, res) => {
     throw new Error("Could not retrieve episodes");
   }
 });
+
+exports.getContentByEpisodeId = catchAsync(async (req, res) => {
+  let { episodeId } = req.params;
+  let episode = await Episode.findById(episodeId);
+  if (!episode) {
+    return res.status(404).json({ message: "episode not found" });
+  }
+  let content = episode.content;
+  return res.status(200).json({ content });
+});
+
+exports.updateContentById = catchAsync(async (req, res) => {
+  let { episodeId } = req.params;
+  let episode = await Episode.findById(episodeId);
+  if (!episode) {
+    return res.status(404).json({ message: "episode not found" });
+  }
+
+  let newContent = req.body.content;
+  episode.content = newContent;
+  episode.updatedAt = new Date();
+  await episode.save();
+  await Project.findByIdAndUpdate(episode.project, { updatedAt: new Date() });
+  return res.status(200).json({ message: "successful" });
+});
+
+exports.deleteEpisode = catchAsync(async (req, res) => {
+  const { episodeId, projectId } = req.params;
+
+  // Find the project
+  const project = await Project.findById(projectId);
+
+  // Ensure the project belongs to the authenticated user
+  if (project.user.toString() !== req.user._id.toString()) {
+    return res.status(401).json({ message: "Not authorized" });
+  }
+
+  // Find the episode
+  const episode = await Episode.findById(episodeId);
+
+  // Ensure the episode exists and belongs to the project
+  if (!episode || episode.project.toString() !== projectId) {
+    return res.status(404).json({ message: "Episode not found" });
+  }
+
+  // Remove the episode from the project's episodes array
+  project.episodes.pull(episodeId);
+  await project.save();
+
+  // Delete the episode from the Episode collection
+  await Episode.findByIdAndDelete(episodeId)
+
+  res.json({ message: "Episode removed successfully" });
+});
